@@ -33,12 +33,21 @@ pub struct Conflict {
     pub requested_range: String,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct WorkspaceLink {
+    pub name: String,
+    pub version: String,
+    pub specifier: String,
+    pub required_by: String,
+}
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Resolution {
     pub packages: BTreeMap<String, String>,
     pub conflicts: Vec<Conflict>,
     pub skipped: Vec<Skipped>,
     pub peer_requests: Vec<PeerRequest>,
+    pub workspace_links: Vec<WorkspaceLink>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,6 +57,22 @@ enum DepKind {
 }
 
 pub fn resolve(root_dependencies: &[(String, String)], index: &RegistryIndex) -> Resolution {
+    resolve_inner(root_dependencies, index, &BTreeMap::new())
+}
+
+pub fn resolve_with_workspaces(
+    root_dependencies: &[(String, String)],
+    index: &RegistryIndex,
+    workspace_versions: &BTreeMap<String, String>,
+) -> Resolution {
+    resolve_inner(root_dependencies, index, workspace_versions)
+}
+
+fn resolve_inner(
+    root_dependencies: &[(String, String)],
+    index: &RegistryIndex,
+    workspace_versions: &BTreeMap<String, String>,
+) -> Resolution {
     let mut resolution = Resolution::default();
     let mut seen: HashSet<(String, String)> = HashSet::new();
     let mut resolved: BTreeMap<String, String> = BTreeMap::new();
@@ -62,12 +87,21 @@ pub fn resolve(root_dependencies: &[(String, String)], index: &RegistryIndex) ->
             continue;
         }
 
-        if range.starts_with("workspace:") {
-            resolution.skipped.push(Skipped {
-                name: name.clone(),
-                range: range.clone(),
-                reason: SkippedReason::WorkspaceProtocol,
-            });
+        if let Some(inner) = range.strip_prefix("workspace:") {
+            if let Some(version) = workspace_versions.get(&name) {
+                resolution.workspace_links.push(WorkspaceLink {
+                    name: name.clone(),
+                    version: version.clone(),
+                    specifier: inner.to_string(),
+                    required_by: String::from("<workspace>"),
+                });
+            } else {
+                resolution.skipped.push(Skipped {
+                    name: name.clone(),
+                    range: range.clone(),
+                    reason: SkippedReason::WorkspaceProtocol,
+                });
+            }
             continue;
         }
 
@@ -133,11 +167,7 @@ pub fn resolve(root_dependencies: &[(String, String)], index: &RegistryIndex) ->
         }
 
         resolved.insert(name.clone(), chosen.clone());
-        let Some(entry) = index
-            .packages
-            .get(&name)
-            .and_then(|v| v.get(&chosen.to_string()))
-        else {
+        let Some(entry) = index.packages.get(&name).and_then(|v| v.get(&chosen)) else {
             continue;
         };
         for (dep_name, dep_range) in &entry.dependencies {
