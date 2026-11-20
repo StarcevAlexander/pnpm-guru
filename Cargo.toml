@@ -1,8 +1,8 @@
 [package]
 name = "pnpm-guru"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-description = "pnpm-style package manager core for Rust - package.json parsing, npm semver ranges and dependency resolution over an offline registry index"
+description = "pnpm-style package manager core for Rust - package.json parsing, npm semver ranges, dependency resolution, content-addressable store and node_modules assembly"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/StarcevAlexander/pnpm-guru"
 homepage = "https://github.com/StarcevAlexander/pnpm-guru"
@@ -13,5 +13,7 @@ categories = ["development-tools"]
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+semver = "1"
 node-semver = "0.2"
+sha2 = "0.10"
 thiserror = "2"
