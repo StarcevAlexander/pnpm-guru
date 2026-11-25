@@ -554,6 +554,7 @@ mod tests {
         fs::write(path, content).unwrap();
     }
 
+    #[cfg(feature = "registry")]
     #[test]
     fn installs_two_packages_from_mock_registry() {
         let registry = MockRegistry::new();
@@ -636,6 +637,7 @@ mod tests {
         let _ = fs::remove_dir_all(&project);
     }
 
+    #[cfg(feature = "registry")]
     #[test]
     fn offline_reinstall_uses_store_and_manifests() {
         let registry = MockRegistry::new();

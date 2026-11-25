@@ -1,3 +1,5 @@
+#![cfg(feature = "registry")]
+
 use pnpm_guru::{DEFAULT_REGISTRY, RegistryClient};
 
 #[test]
