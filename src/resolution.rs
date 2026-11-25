@@ -15,6 +15,7 @@ pub enum SkippedReason {
     InvalidRange(String),
     NoMatchingVersion,
     WorkspaceProtocol,
+    UnsupportedProtocol(String),
     OptionalNotSatisfiable,
 }
 

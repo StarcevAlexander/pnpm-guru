@@ -8,6 +8,8 @@ pub struct PackageEntry {
     pub dependencies: BTreeMap<String, String>,
     pub optional_dependencies: BTreeMap<String, String>,
     pub peer_dependencies: BTreeMap<String, String>,
+    pub integrity: Option<String>,
+    pub tarball: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -31,6 +33,8 @@ impl RegistryIndex {
                             dependencies: BTreeMap::new(),
                             optional_dependencies: BTreeMap::new(),
                             peer_dependencies: BTreeMap::new(),
+                            integrity: None,
+                            tarball: None,
                         };
                         if let Some(meta_obj) = meta.as_object() {
                             for key in
@@ -75,5 +79,64 @@ impl RegistryIndex {
 
     pub fn package_count(&self) -> usize {
         self.packages.len()
+    }
+
+    pub fn extend(&mut self, other: RegistryIndex) {
+        for (name, versions) in other.packages {
+            let target = self.packages.entry(name).or_default();
+            for (version, entry) in versions {
+                target.insert(version, entry);
+            }
+        }
+    }
+
+    pub fn from_packument(value: &Value, name: &str) -> RegistryIndex {
+        let mut index = RegistryIndex::default();
+        let Some(versions) = value.get("versions").and_then(Value::as_object) else {
+            return index;
+        };
+        let mut parsed: BTreeMap<String, PackageEntry> = BTreeMap::new();
+        for (version_raw, meta) in versions {
+            let Ok(version) = Version::parse(version_raw) else {
+                continue;
+            };
+            let mut entry = PackageEntry {
+                version: version.clone(),
+                dependencies: BTreeMap::new(),
+                optional_dependencies: BTreeMap::new(),
+                peer_dependencies: BTreeMap::new(),
+                integrity: None,
+                tarball: None,
+            };
+            if let Some(meta_obj) = meta.as_object() {
+                for key in ["dependencies", "optionalDependencies", "peerDependencies"] {
+                    if let Some(deps) = meta_obj.get(key).and_then(Value::as_object) {
+                        let target = match key {
+                            "dependencies" => &mut entry.dependencies,
+                            "optionalDependencies" => &mut entry.optional_dependencies,
+                            _ => &mut entry.peer_dependencies,
+                        };
+                        for (dep_name, dep_range) in deps {
+                            if let Some(range) = dep_range.as_str() {
+                                target.insert(dep_name.clone(), range.to_string());
+                            }
+                        }
+                    }
+                }
+                if let Some(dist) = meta_obj.get("dist").and_then(Value::as_object) {
+                    entry.integrity = dist
+                        .get("integrity")
+                        .and_then(Value::as_str)
+                        .map(str::to_string);
+                    entry.tarball = dist
+                        .get("tarball")
+                        .and_then(Value::as_str)
+                        .map(str::to_string);
+                }
+            }
+            parsed.insert(version_raw.clone(), entry);
+        }
+        index.packages.insert(name.to_string(), parsed);
+        index
     }
 }

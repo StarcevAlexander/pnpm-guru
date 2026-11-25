@@ -1,14 +1,18 @@
 [package]
 name = "pnpm-guru"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
-description = "pnpm-style package manager core for Rust - package.json parsing, npm semver ranges, dependency resolution, workspace protocol, pnpm-lock.yaml read/write, content-addressable store and node_modules assembly"
+description = "pnpm-style package manager core for Rust - package.json parsing, npm semver ranges, dependency resolution, registry HTTP client, tarball installs with integrity checks, lifecycle scripts, bin linking, pnpm-lock.yaml read/write, content-addressable store and node_modules assembly"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/StarcevAlexander/pnpm-guru"
 homepage = "https://github.com/StarcevAlexander/pnpm-guru"
 readme = "README.md"
-keywords = ["pnpm", "package-manager", "semver", "workspaces", "lockfile"]
+keywords = ["pnpm", "package-manager", "semver", "npm-registry", "lockfile"]
 categories = ["development-tools"]
+
+[features]
+default = ["registry"]
+registry = ["dep:ureq"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -17,3 +21,6 @@ serde_yaml = "0.9"
 node-semver = "0.2"
 sha2 = "0.10"
 thiserror = "2"
+flate2 = "1"
+tar = "0.4"
+ureq = { version = "3", default-features = false, features = ["native-tls"], optional = true }

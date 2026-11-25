@@ -12,7 +12,29 @@ pub struct PackageJson {
     pub optional_dependencies: HashMap<String, String>,
     pub peer_dependencies: HashMap<String, String>,
     pub scripts: HashMap<String, String>,
+    pub bin: Option<BinField>,
     pub workspaces: Option<Workspaces>,
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum BinField {
+    Single(String),
+    Map(HashMap<String, String>),
+}
+
+impl BinField {
+    pub fn entries(&self, package_name: &str) -> Vec<(String, String)> {
+        match self {
+            BinField::Single(path) => vec![(package_name.to_string(), path.clone())],
+            BinField::Map(map) => {
+                let mut pairs: Vec<(String, String)> =
+                    map.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+                pairs.sort();
+                pairs
+            }
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
