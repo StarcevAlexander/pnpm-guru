@@ -439,10 +439,12 @@ fn sorted_unique(dependencies: Vec<(String, String)>) -> Vec<(String, String)> {
 mod tests {
     use super::*;
 
+    #[cfg(feature = "registry")]
     struct MockRegistry {
         listener: std::net::TcpListener,
     }
 
+    #[cfg(feature = "registry")]
     impl MockRegistry {
         fn new() -> Self {
             Self {
@@ -519,8 +521,10 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "registry")]
     use std::io::{Read as _, Write as _};
 
+    #[cfg(feature = "registry")]
     fn build_tgz(files: &[(&str, &str)]) -> Vec<u8> {
         use flate2::Compression;
         use flate2::write::GzEncoder;

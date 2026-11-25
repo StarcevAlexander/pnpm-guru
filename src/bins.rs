@@ -21,10 +21,12 @@ pub fn bin_entries(package_json: &PackageJson) -> Vec<(String, String)> {
     }
 }
 
+#[cfg(windows)]
 fn escape_cmd(text: &str) -> String {
     text.replace('"', "\"\"")
 }
 
+#[cfg(windows)]
 fn cmd_shim(target_relative: &str) -> String {
     let target = target_relative.replace('/', "\\");
     format!(
@@ -33,6 +35,7 @@ fn cmd_shim(target_relative: &str) -> String {
     )
 }
 
+#[cfg(windows)]
 fn ps1_shim(target_relative: &str) -> String {
     let target = target_relative.replace('/', "\\");
     format!(
@@ -41,6 +44,7 @@ fn ps1_shim(target_relative: &str) -> String {
     )
 }
 
+#[cfg(windows)]
 fn sh_shim(target_relative: &str) -> String {
     format!(
         "#!/bin/sh\nbasedir=$(dirname \"$0\")\nexec node \"$basedir/{target}\" \"$@\"\n",
@@ -172,7 +176,7 @@ mod tests {
         let target = fs::read_link(&link).unwrap();
         assert_eq!(target.to_string_lossy(), "../tools/cli.js");
         let resolved = fs::canonicalize(&link).unwrap();
-        assert_eq!(resolved, fs::canonicalize(&real.join("cli.js")).unwrap());
+        assert_eq!(resolved, fs::canonicalize(real.join("cli.js")).unwrap());
         let _ = fs::remove_dir_all(&root);
     }
 
